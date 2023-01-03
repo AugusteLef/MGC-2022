@@ -14,6 +14,28 @@ Some scripts may assume the following file-structure (you might have to create m
 - training.py : Script allowing to train any models presented in the paper
 - evaluate.py : Script allowing to evaluate any models and save .png and .txt of the results in the corresponding directory
 
+Datasets, Models, Figures, and Results directories being empty, you might need to create them yourself with the following command line:
+```
+mkdir Datasets
+
+mkdir Models
+
+mkdir Figures
+
+mkdir Results
+```
+
+Also you need to create the *preprocess_mfcc* directory in Datasets
+```
+cd Datasets
+
+mkdir preprocess_mfcc
+
+cd ..
+```
+
+
+
 
 # Melspectrogram and CRNN methods
 ## Dataset
@@ -62,10 +84,10 @@ pip install -r requirements.txt
 
 ### Preprocessing
 
-Before running the preprocessing, ensure that Datasets contains de following directory:
-- fma_medium
-- fma_metadata
-- preprocess_mfcc
+Before running the preprocessing, ensure that *Datasets* contains de following directory:
+- fma_medium/
+- fma_metadata/
+- preprocess_mfcc/
 
 You may need to create the last folder yourself with the following command line:
 ```bash
