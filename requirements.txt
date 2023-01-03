@@ -1,0 +1,43 @@
+# ------ DL ------ #
+tensorflow
+keras
+numpy
+pandas
+scikit-learn
+jupyter
+torch>=1.10.0
+torchvision>=0.11.0
+pytorch-lightning==1.8.6
+torchmetrics==0.10.0
+math
+librosa
+
+
+# --------- hydra --------- #
+hydra-core==1.2.0
+hydra-colorlog==1.2.0
+hydra-optuna-sweeper==1.2.0
+
+# --------- loggers --------- #
+wandb
+# neptune-client
+# mlflow
+# comet-ml
+
+# ------ other ------ #
+os
+json
+pickle
+matplolib
+seaborn
+warnings
+ast
+argparse
+pyrootutils     # standardizing the project root setup
+pre-commit      # hooks for applying linters on commit
+rich            # beautiful text formatting in terminal
+pytest          # tests
+# sh            # for running bash commands in some tests (linux/macos only)
+pydot
+pip
+tqdm
