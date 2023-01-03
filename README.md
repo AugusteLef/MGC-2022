@@ -127,8 +127,8 @@ python3 training.py -30sec -4c -l2 -lrs -gru2 -ep20
 If you want to run the model from the [CRNN for Music Classification paper by Keunwoo Choi & al.](https://scholar.google.co.kr/citations?view_op=view_citation&hl=en&user=ZrqdSu4AAAAJ&sortby=pubdate&citation_for_view=ZrqdSu4AAAAJ:ULOm3_A8WrAC) you need to use the specific argument:
 - "-papermodel"
 This argument can be combine ONLY with the size of the sample you want to use.
-Example to train the model from the paper with 30sec samples:
 
+Example: train the model from the paper with 30sec samples:
 ```
 python3 training.py -30sec -papermodel
 ```
@@ -149,8 +149,7 @@ The script takes as inputs the following arguments:
 - "-voting" ("--voting") : if you want to apply the voting methods (divide and conquer) --> only possible for models trained with 10s or 3s samples (optional)
 
 
-Example to evaluate the model trained with 4 convolution blocks on 20 epochs with 10sec samples, and using the voting (divide and conquer) method:
-
+Example: evaluate the model trained with 4 convolution blocks on 20 epochs with 10sec samples, and using the voting (divide and conquer) method:
 ```
 python3 evaluate.py "4conv_20epochs" -30 -voting
 ```
