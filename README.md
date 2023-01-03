@@ -146,7 +146,7 @@ The script takes as inputs the following arguments:
 
 Example: evaluate the model trained with 4 convolution blocks on 20 epochs with 10sec samples, and using the voting (divide and conquer) method:
 ```
-python3 evaluate.py "4conv_20epochs" -30 -voting
+python3 evaluate.py "4conv_20epochs" -10 -voting
 ```
 
 Warning: as we plot the different figures in time, you might have to close them to continue the process
