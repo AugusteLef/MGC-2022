@@ -3,6 +3,8 @@ The purpose of this repository is to offer an overview of the methods used durin
 
 # File Structure
 Some scripts may assume the following file-structure (you might have to create missing directories):
+
+### Directories
 - Datasets : Directory containing all training-, test- and preprocessed data (and original data)
 - Datasets/fma_medium : Directory containing all the original data from the FMA dataset
 - Datasets/fma_metadata : Directory containing all the metadata of the FMA dataset
@@ -10,10 +12,13 @@ Some scripts may assume the following file-structure (you might have to create m
 - Models : Directory containing all the model you train (we add some pre-trained models from our experiments FYI)
 - Figures : Directory containing the confusion matrix and the training history (loss and accuracy) in .png format evaluation
 - Results : Directory containing .txt files with the accuracy of each previously evaluated models
+
+### Scripts
 - preprocessing_melspect.py : Script running the preprocessing pipeline
 - training.py : Script allowing to train any models presented in the paper
 - evaluate.py : Script allowing to evaluate any models and save .png and .txt of the results in the corresponding directory
 
+### Additionals
 Datasets, Models, Figures, and Results directories being empty, you might need to create them yourself with the following command line:
 ```
 mkdir Datasets
@@ -33,9 +38,6 @@ mkdir preprocess_mfcc
 
 cd ..
 ```
-
-
-
 
 # Melspectrogram and CRNN methods
 ## Dataset
