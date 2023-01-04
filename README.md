@@ -19,16 +19,7 @@ Some scripts may assume the following file-structure (you might have to create m
 - ***evaluate.py*** : Script allowing to evaluate any models and save .png and .txt of the results in the corresponding directory
 
 ### Additionals
-*Datasets/, Models/, Figures/, and Result/s* directories being empty at the begining, you need to create them yourself with the following command line:
-```
-mkdir Datasets
-
-mkdir Models
-
-mkdir Figures
-
-mkdir Results
-```
+*Datasets/, Models/, Figures/, and Results/* are empty directories at the beginning.
 
 # Melspectrogram and CRNN methods
 ## Datasets
