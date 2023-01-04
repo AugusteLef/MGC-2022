@@ -9,7 +9,11 @@ Some scripts may assume the following file-structure (you might have to create m
 - ***Datasets/fma_medium/*** : Directory containing all the original data from the FMA dataset
 - ***Datasets/fma_metadata/*** : Directory containing all the metadata of the FMA dataset
 - ***Datasets/preprocess_mfcc/*** : Directory containing 3 subfolders with 30s, 10s and 3s cuts after pre-processing and folder preparation
-- ***Models/*** : Directory containing all the models you train (we add some pre-trained models from our experiments FYI)
+- ***Models/*** : Directory containing 3 subdirectories with all the models you train (we add some pre-trained models from our experiments FYI)
+- ***Models/30sec/*** : Directory containing all the models you train with 30sec inputs
+- ***Models/10sec/*** : Directory containing all the models you train with 10sec inputs
+- ***Models/3sec/*** : Directory containing all the models you train with 3sec inputs
+
 - ***Figures/*** : Directory containing the confusion matrix and the training history (loss and accuracy) in .png format evaluation
 - ***Results/*** : Directory containing .txt files with the accuracy of each previously evaluated model
 
@@ -91,6 +95,19 @@ Note that we set up *preprocessing_melspect.py* to reproduce the exact experimen
 Disclaimer: we ensured that the code is reliable for 10s and 3s cuts, using other cut lengths might lead to some kind of error in the process.
 
 ### Training
+
+Before training the models, you need to ensure that you have the *Models/30sec/ , Models/10sec/ , Models/3sec* directories in your strucutre. You can run the following command line to create if needed:
+
+```bash
+mkdir Models
+cd Models/
+mkdir 30sec
+mkdir 10sec
+mkdir 3seec
+cd ..
+```
+
+
 Using *training.py* you can train any models we used during our experiments. To make the process easier we build the script such that it takes different arguments allowing you to train different model architectures :
 
 - ***"-30sec" or "-10sec" or "-3sec"*** : chose if you want to train the model with 30, 10 or 3 seconds samples (mandatory)
