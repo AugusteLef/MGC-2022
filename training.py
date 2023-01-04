@@ -31,7 +31,7 @@ INPUT_3S_SHAPE = (TIME_3_SHAPE, MEL_SHAPE, 1)
 BATCH_SIZE = 32
 EPOCHS = 50
 LEARNING_RATE_ADAM = 0.0001
-ADAM = keras.optimizers.Adam(learning_rate = LEARNING_RATE)
+ADAM = keras.optimizers.Adam(learning_rate = LEARNING_RATE_ADAM)
 REGULARIZERL1 = tf.keras.regularizers.l1(0.001)
 REGULARIZERL2 = tf.keras.regularizers.l2(0.001)
 
@@ -96,15 +96,18 @@ def load_data(data_path: str, input_shape):
     x_test, y_test = [],[]
     for type_i in os.listdir(data_path):
         if not type_i.startswith('.'):
-           print(type_i)
-            for genre_i in tqdm(os.listdir(data_path+type_i)):
+            print(type_i)
+            for genre_i in tqdm(os.listdir(data_path+"/"+type_i)):
                 if str(genre_i).isdigit():
-                    for file in os.listdir(data_path+type_i+'/'+genre_i):
-                        track_id = file.split('_')[0] #exlcude the _XX.npy
+                    for file in os.listdir(data_path+"/"+type_i+'/'+genre_i):
+                        if "_" in file:
+                            track_id = file.split('_')[0] #exlcude the _XX.npy
+                        else:
+                            track_id = file.split('.')[0] #exclude the .npy
                         if track_id.isdigit():
-                            f = data_path+type_i+'/'+genre_i+"/"+file               
+                            f = data_path+"/"+type_i+'/'+genre_i+"/"+file              
                             arr = np.load(f)
-                            if np.array(arr).shape == input_shape:                             
+                            if np.array(arr).shape == input_shape:
                                 if type_i == "training":
                                     x_train.append(arr)
                                     y_train.append([1 if i ==int(genre_i) else 0 for i in range(N_CATEGORIES)])
@@ -123,6 +126,7 @@ def load_data(data_path: str, input_shape):
     x_test, y_test = np.array(x_test), np.array(y_test)
 
     # min-max normalization
+    print("Normalizing the data...")
     x_train, x_val, x_test = normalize_data(x_train, x_val, x_test)
 
     return x_train, y_train, x_val, y_val, x_test, y_test
@@ -144,7 +148,7 @@ def save_model(model, history, cut: str, name: str):
 ################################# Paper Model Models ####################################
 
 
-def paper_model_30sec(epoch20=False, x_train, x_val, y_train, y_val):
+def paper_model_30sec(x_train, x_val, y_train, y_val, epoch20=False):
     from tensorflow import keras
     from keras import Sequential
     from keras.layers import Conv2D, MaxPool2D, BatchNormalization, Flatten, Dense, Dropout, GRU, Reshape
@@ -211,7 +215,7 @@ def paper_model_30sec(epoch20=False, x_train, x_val, y_train, y_val):
     history_CRNN = model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE, shuffle=True)
     save_model(model, history_CRNN, "30sec", name)
 
-def paper_model_10sec(epoch20=False, x_train, x_val, y_train, y_val):
+def paper_model_10sec(x_train, x_val, y_train, y_val, epoch20=False):
     from tensorflow import keras
     from keras import Sequential
     from keras.layers import Conv2D, MaxPool2D, BatchNormalization, Flatten, Dense, Dropout, GRU, Reshape
@@ -278,7 +282,7 @@ def paper_model_10sec(epoch20=False, x_train, x_val, y_train, y_val):
     history_CRNN = model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE, shuffle=True)
     save_model(model, history_CRNN, "10sec", name)
 
-def paper_model_3sec(epoch20=False, x_train, x_val, y_train, y_val):
+def paper_model_3sec(x_train, x_val, y_train, y_val, epoch20=False):
     from tensorflow import keras
     from keras import Sequential
     from keras.layers import Conv2D, MaxPool2D, BatchNormalization, Flatten, Dense, Dropout, GRU, Reshape
@@ -349,13 +353,13 @@ def paper_model_3sec(epoch20=False, x_train, x_val, y_train, y_val):
 
 ################################# 30sec Models ####################################
 
-def model_30sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_30sec_4conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_30sec")
     name = "4conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -363,9 +367,9 @@ def model_30sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -376,7 +380,7 @@ def model_30sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(3,3), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -408,7 +412,7 @@ def model_30sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -431,22 +435,22 @@ def model_30sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
         history_CRNN = model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE, shuffle=True)
         save_model(model, history_CRNN, "30sec", name )
 
-def model_30sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_30sec_3conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_30sec")
     name = "3conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
         name+= "_LRS"
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -457,7 +461,7 @@ def model_30sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(3,3), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -507,22 +511,22 @@ def model_30sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
         save_model(model, history_CRNN, "30sec", name )
 
 
-def model_30sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_30sec_2conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_30sec")
     name = "2conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
         name+= "_LRS"
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -533,7 +537,7 @@ def model_30sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(24,32), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -551,7 +555,7 @@ def model_30sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -576,13 +580,13 @@ def model_30sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 ################################# 10 sec Models ####################################
 
-def model_10sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_10sec_4conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_10sec")
     name = "4conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -590,9 +594,9 @@ def model_10sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -603,7 +607,7 @@ def model_10sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(3,3), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -635,7 +639,7 @@ def model_10sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -659,13 +663,13 @@ def model_10sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
         save_model(model, history_CRNN, "10sec", name )
 
 
-def model_10sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_10sec_3conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_10sec")
     name = "3conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -673,9 +677,9 @@ def model_10sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -686,7 +690,7 @@ def model_10sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(3,3), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -712,7 +716,7 @@ def model_10sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -735,13 +739,13 @@ def model_10sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
         history_CRNN = model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE, shuffle=True)
         save_model(model, history_CRNN, "10sec", name )
 
-def model_10sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_10sec_2conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_10sec")
     name = "2conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -749,9 +753,9 @@ def model_10sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -762,7 +766,7 @@ def model_10sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(8,32), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -780,7 +784,7 @@ def model_10sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -805,13 +809,13 @@ def model_10sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch
 
 ################################# 3 sec Models ####################################
 
-def model_3sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_3sec_4conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_3sec")
     name = "4conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -819,9 +823,9 @@ def model_3sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -832,7 +836,7 @@ def model_3sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(2,2), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -864,7 +868,7 @@ def model_3sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -887,13 +891,13 @@ def model_3sec_4conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
         history_CRNN = model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE, shuffle=True)
         save_model(model, history_CRNN, "3sec", name )
 
-def model_3sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_3sec_3conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_3sec")
     name = "3conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -901,9 +905,9 @@ def model_3sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -914,7 +918,7 @@ def model_3sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(2,2), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -939,7 +943,7 @@ def model_3sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -962,13 +966,13 @@ def model_3sec_3conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
         history_CRNN = model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE, shuffle=True)
         save_model(model, history_CRNN, "3sec", name )
 
-def model_3sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False, x_train, x_val, y_train, y_val):
+def model_3sec_2conv(x_train, x_val, y_train, y_val, gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch20=False):
 
     #Build the model
     model = Sequential(name="crnn_3sec")
     name = "2conv"
     callback = None
-    regulizer = None
+    regularizer = None
     #if we use the scheduler on learning rate:
     if lrs:
         callback = LearningRateScheduler(scheduler)
@@ -976,9 +980,9 @@ def model_3sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
 
     if l1_loss:
         name += "_L1"
-        regulizer = REGULARIZERL1
+        regularizer = REGULARIZERL1
     elif l2_loss:
-        regulizer = REGULARIZERL2
+        regularizer = REGULARIZERL2
         name += "_L2"
 
     # Convolutional Block 1
@@ -989,7 +993,7 @@ def model_3sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
     model.add(Dropout(0.1))
 
     # Convolutional Block 2
-    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regulizer))
+    model.add(Conv2D(filters=32, kernel_size=(3,3), data_format='channels_last', kernel_regularizer=regularizer))
     model.add(MaxPool2D(pool_size=(4,32), data_format='channels_last')) 
     model.add(BatchNormalization())
     # Dropout
@@ -1007,7 +1011,7 @@ def model_3sec_2conv(gru2=False, l1_loss=False, l2_loss=False, lrs=False, epoch2
 
 
     # Dense Layer
-    model.add(Dense(64,  kernel_regularizer=REGULARIZER))
+    model.add(Dense(64,  kernel_regularizer=regularizer))
     model.add(Dropout(0.4))
 
     # Output Layer
@@ -1047,7 +1051,7 @@ def main(args):
     if (args.s30sec and args.s10sec) or (args.s30sec and args.s3sec) or (args.s10sec and args.s3sec):
         print("error: multiple sample/snippet size selected. Please chose only 1")
         return
-    if (args.s4convo and args.3convo) or (args.s4convo and args.s2convo) or (args.s3convo and args.s2convo):
+    if (args.s4convo and args.s3convo) or (args.s4convo and args.s2convo) or (args.s3convo and args.s2convo):
         print("error: multiple number of convolution block selected. Please chose only 1")
         return
 
@@ -1056,65 +1060,81 @@ def main(args):
         return
     # specific case where we run the model from the paper
     if args.papermodel:
-        if args.verbose:
-            print("Training the model from the original paper...")
         if args.s30sec:
+            if args.verbose:
+                print("Loading the data...")
             x_train, y_train, x_val, y_val, x_test, y_test = load_data(path30sec, INPUT_30S_SHAPE)
-            paper_model_30sec(epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+            if args.verbose:
+                print("Training the model from the original paper...")
+            paper_model_30sec(x_train, x_val, y_train, y_val, epoch20=args.epoch20)
         elif args.s10sec:
+            if args.verbose:
+                print("Loading the data...")
             x_train, y_train, x_val, y_val, x_test, y_test = load_data(path10sec, INPUT_10S_SHAPE)
-            paper_model_10sec(epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+            if args.verbose:
+                print("Training the model from the original paper...")
+            paper_model_10sec(x_train, x_val, y_train, y_val, epoch20=args.epoch20)
         elif args.s3sec:
-            x_train, y_train, x_val, y_val, x_test, y_test load_data(path3sec, INPUT_3S_SHAPE)
-            paper_model_3sec(epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+            if args.verbose:
+                print("Loading the data...")
+            x_train, y_train, x_val, y_val, x_test, y_test = load_data(path3sec, INPUT_3S_SHAPE)
+            if args.verbose:
+                print("Training the model from the original paper...")
+            paper_model_3sec(x_train, x_val, y_train, y_val, epoch20=args.epoch20)
 
     # 30sec sample models
     if args.s30sec:
+        if args.verbose:
+            print("Loading the data...")
         x_train, y_train, x_val, y_val, x_test, y_test = load_data(path30sec, INPUT_30S_SHAPE)
         if args.s4convo:
             if args.verbose:
-            print("Training the model ...")
-            model_30sec_4conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_30sec_4conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
         elif args.s3convo:
             if args.verbose:
-            print("Training the model ...")
-            model_30sec_3conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_30sec_3conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
         elif args.s2convo:
             if args.verbose:
-            print("Training the model ...")
-            model_30sec_2conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_30sec_2conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
 
     # 10sec sample models
     elif args.s10sec:
+        if args.verbose:
+            print("Loading the data...")
         x_train, y_train, x_val, y_val, x_test, y_test = load_data(path10sec, INPUT_10S_SHAPE)
         if args.s4convo:
             if args.verbose:
-            print("Training the model ...")
-            model_10sec_4conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_10sec_4conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
         elif args.s3convo:
             if args.verbose:
-            print("Training the model ...")
-            model_10sec_3conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_10sec_3conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
         elif args.s2convo:
             if args.verbose:
-            print("Training the model ...")
-            model_10sec_2conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_10sec_2conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
 
     # 3sec sample models
     elif args.s3sec:
-        x_train, y_train, x_val, y_val, x_test, y_test load_data(path3sec, INPUT_3S_SHAPE)
+        if args.verbose:
+            print("Loading the data...")
+        x_train, y_train, x_val, y_val, x_test, y_test = load_data(path3sec, INPUT_3S_SHAPE)
         if args.s4convo:
             if args.verbose:
-            print("Training the model ...")
-            model_3sec_4conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_3sec_4conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
         elif args.s3convo:
             if args.verbose:
-            print("Training the model ...")
-            model_3sec_3conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_3sec_3conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
         elif args.s2convo:
             if args.verbose:
-            print("Training the model ...")
-            model_3sec_2conv(gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20, x_train, x_val, y_train, y_val)
+                print("Training the model ...")
+            model_3sec_2conv(x_train, x_val, y_train, y_val, gru2=args.grux2, l1_loss=args.l1loss, l2_loss=args.l2loss, lrs=args.lrscheduler, epoch20=args.epoch20)
 
 
     if not (args.s30sec or args.s10sec or args.s3sec):
@@ -1144,9 +1164,9 @@ if __name__ == "__main__":
     parser.add_argument('-l1', '--l1loss', dest='l1loss', help='do you want to use l1 loss?', action='store_true')
     parser.add_argument('-l2', '--l2loss', dest='l2loss', help='do you want to use l2 loss?', action='store_true')
     
-    parser.add_argument('-lrs', '--lrscheduler', dest='lrscheduler', help='do you want to use the LRS during training')
+    parser.add_argument('-lrs', '--lrscheduler', dest='lrscheduler', help='do you want to use the LRS during training', action='store_true')
     parser.add_argument('-gru2', '--grux2', dest='grux2', help='do you want to add a second GRU?', action='store_true')
     parser.add_argument('-ep20', '--epoch20', dest='epoch20', help='want to run only 20epoch', action='store_true')
-    parser.add_argument('-v', '--verbose', dest='verbose', help='do you want to print information', action='store_true')
+    parser.add_argument('-v', '--verbose', dest='verbose', help='do you want to print information', action='store_false')
     args = parser.parse_args()
     main(args)
