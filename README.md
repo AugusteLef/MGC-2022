@@ -17,6 +17,8 @@ Some scripts may assume the following file-structure (you might have to create m
 - ***Figures/*** : Directory containing the confusion matrix and the training history (loss and accuracy) in .png format evaluation
 - ***Results/*** : Directory containing .txt files with the accuracy of each previously evaluated model
 
+- ***ManualFeatures/*** : Directory containing a small subproject for the dimensionality reduction within the Librosa features. 
+
 ### Scripts
 - ***preprocessing_melspect.py*** : Script running the preprocessing pipeline
 - ***training.py*** : Script allowing to train any models presented in the paper
@@ -35,7 +37,7 @@ Download the [FMA](https://github.com/mdeff/fma) dataset, and the metadata:
 1. [fma_medium.zip](https://os.unil.cloud.switch.ch/fma/fma_medium.zip): 25,000 tracks of 30s, 16 unbalanced genres (22GiB)
 2. [fma_metadata.zip](https://os.unil.cloud.switch.ch/fma/fma_metadata.zip)
 
-Move them to the *Datasets/* directory:
+Move them to the *Datasets/* directory and to the *ManualFeatures/data/* directory:
 ```
 unzip fma_medium.zip
 
@@ -43,6 +45,7 @@ mv fma_medium/* Datasets
 
 unzip fma_metadata.zip
 
+cp -r fma_metadata/ ManualFeatures/data/
 mv fma_metadata/* Datasets
 ```
 The *Datasets/fma_metadata/* directory should contain the following files:

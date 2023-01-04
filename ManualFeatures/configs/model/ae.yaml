@@ -1,0 +1,25 @@
+_target_: src.models.ae_module.AEModule
+
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.01
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  mode: min
+  factor: 0.1
+  patience: 10
+
+net:
+  _target_: src.models.components.simple_dense_net.SimpleDenseNet
+  input_size: 10
+
+ae:
+  _target_: src.models.components.ae.AE
+  latent_space_dim: 10
+
+# weight of the reconstruction loss (in [0, 1], category loss having a weight of 1-reconstruction_weight)
+reconstruction_weight: 0.5
