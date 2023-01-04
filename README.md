@@ -33,8 +33,6 @@ Download the [FMA](https://github.com/mdeff/fma) dataset, and the metadata:
 
 Move them to the *Datasets/* directory:
 ```
-mkdir Datasets
-
 unzip fma_medium.zip
 
 mv fma_medium/* Datasets
