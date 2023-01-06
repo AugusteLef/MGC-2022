@@ -160,8 +160,15 @@ python3 evaluate.py "4conv_20epochs" -10 -voting
 
 Warning: as we plot the different figures in time, you might have to close them to continue the process
 
-# Features based method and Latent Space Representation
-(...)
+# Feature-based Method and Latent Space Representation
+
+For our setup in the feature-based approach, we used the [PyTorchLightning-Hydra Template](https://github.com/ashleve/lightning-hydra-template).
+The entire structure can be found within the ***ManualFeatures/*** directory and run directly from there.
+For exact instructions on how to run the project and adjust configs, we refer to the Template documentation (link above).
+
+You can find the experiment runs under ***ManualFeatures/runs/***, where:
+- ***wandb_export_wd_search.csv*** contains the runs we used to select appropriate hyperparameters
+- ***wandb_export_ae.csv*** contains our experiment runs with our auto-encoder architecture
 
 # Final Note
 
